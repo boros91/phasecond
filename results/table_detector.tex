@@ -1,0 +1,15 @@
+\begin{tabular}{llcccccc}
+\toprule
+& & \multicolumn{2}{c}{tight reference} & \multicolumn{4}{c}{from a BDF run with the production tolerances}\\
+\cmidrule(lr){3-4}\cmidrule(lr){5-8}
+problem & class & $\Pi$ & $\Pi_*$ & $\eta$ of the run & $\Pi$ & $\Pi_*$ & steps\\
+\midrule
+flame, $q=2$, $\delta=10^{-4}$ & I & $2.5\cdot10^{5}$ & $2.5\cdot10^{5}$ & $32.2$ & $2.3\cdot10^{5}$ & $2.5\cdot10^{5}$ & 71\\
+flame, $q=3$, $\delta=10^{-2}$ & I & $2.5\cdot10^{3}$ & $2.5\cdot10^{3}$ & $1.15$ & $2.5\cdot10^{3}$ & $2.5\cdot10^{3}$ & 62\\
+logistic, $x_0=10^{-5}$ & II & $491$ & $491$ & $0.0902$ & $408$ & $491$ & 41\\
+SIR, $I_0=10^{-6}$ & II & $4.4\cdot10^{3}$ & $4.4\cdot10^{3}$ & $0.31$ & $2.2\cdot10^{3}$ & $4.4\cdot10^{3}$ & 44\\
+ghost, $\varepsilon=10^{-6}$ & III & $9.9\cdot10^{3}$ & $9.9\cdot10^{3}$ & $5.65$ & $9.8\cdot10^{3}$ & $9.9\cdot10^{3}$ & 197\\
+Morris--Lecar, $\Delta=10^{-2}$ & III & $6.4\cdot10^{4}$ & $3.1\cdot10^{4}$ & $6.34$ & $6.1\cdot10^{4}$ & $3.1\cdot10^{4}$ & 352\\
+H$_2$--air & II & $3.8\cdot10^{8}$ & $9.9\cdot10^{6}$ & \multicolumn{4}{c}{no event}\\
+\bottomrule
+\end{tabular}

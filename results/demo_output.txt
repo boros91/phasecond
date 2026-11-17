@@ -1,0 +1,69 @@
+
+====================================================================================================
+flame problem y' = y^2 - y^3, y(0) = 1e-4, event y = 1/2 (scalar report)
+event time T_e   = 10007.2
+Theta(T_e)       = 4.08
+Pi               = 2.48e+05  at x = 0.0001   (relative control only: 2.5e+03)
+rtol * Pi        = 24.8
+finite tolerance : rtol*Pi_early = 24.5,  rtol*Pi_late = 25
+Lambda_alpha (alpha=1) = 2.5e+05;  rtol^alpha * Lambda = 25
+--> PHASE ILL-CONDITIONED at this tolerance
+
+====================================================================================================
+logistic equation from x0 = 1e-7, below the absolute tolerance (scalar report)
+event time T_e   = 16.1181
+Theta(T_e)       = 2.04
+Pi               = 4.9e+04  at x = 1e-07   (relative control only: 1)
+rtol * Pi        = 4.9
+finite tolerance : rtol*Pi_early = 1.18,  rtol*Pi_late = inf
+Lambda_alpha (alpha=1) = 4.9e+04;  rtol^alpha * Lambda = 4.9
+--> THE EVENT CAN BE LOST: at x = 1e-07 an admissible error reaches an equilibrium of f
+
+====================================================================================================
+SIR, I0 = 1e-8: check of a run just made, then the full report
+quick_check of an RK45 run: rtol*Pi_* = 43.8 >= 1: the event time of this run is not reliable; one accepted step can move the event by its width
+event time T_e            = 95.9529
+Theta(T_e)                = 11.4   (time resolution of the event in the solver's scale)
+Pi                        = 4.38e+05   (adjoint-free bound Pi_* = 4.38e+05)
+rtol * Pi                 = 43.8
+Lambda_alpha (alpha=1)  = 4.38e+05;  rtol^alpha * Lambda = 43.8
+Theta is largest at t = 0 (0.0% of T_e), 100% from component I
+--> PHASE ILL-CONDITIONED at this tolerance: one accepted step can move the event by its width
+    the admissible error exceeds the solution itself in: I  (the error test does not control their sign)
+    what would help:
+      - absolute tolerance <= 1e-11 gives Pi = 16.7 (relative control alone: 12.2); rtol must then be below 8.2e-05 as well
+      - logarithmic unknowns: Pi = 7.6
+      - time as a dependent variable with AbsTol_t = 0.0011
+
+====================================================================================================
+Morris-Lecar neuron near its SNIC bifurcation, Delta = 1e-2, event: next spike
+event time T_e            = 1789.1
+Theta(T_e)                = 1.02   (time resolution of the event in the solver's scale)
+Pi                        = 6.4e+04   (adjoint-free bound Pi_* = 3.07e+04)
+rtol * Pi                 = 6.4
+Lambda_alpha (alpha=1)  = 1.28e+05;  rtol^alpha * Lambda = 12.8
+Theta is largest at t = 932 (52.1% of T_e), 90% from component V
+--> PHASE ILL-CONDITIONED at this tolerance: one accepted step can move the event by its width
+    the admissible error exceeds the solution itself in: w  (the error test does not control their sign)
+    what would help:
+      - absolute tolerance <= 1e-05 gives Pi = 9.54e+04 (relative control alone: 6.05e+04); rtol must then be below 1.7e-08 as well
+      - time as a dependent variable with AbsTol_t = 0.0001
+
+====================================================================================================
+orbit test (two LSODA runs, tol and tol/10) on the flame problem
+E_time = 9.91e-01, E_orbit = 2.84e-06, ratio = 2.9e-06, time shift between the runs at the fastest point = +123
+--> PHASE ERROR: the two runs follow the same orbit at different times
+
+====================================================================================================
+hydrogen-air ignition with SciPy's default tolerances (rtol 1e-3, atol 1e-6)
+event time T_e            = 0.000311138
+Theta(T_e)                = 1.98e-05   (time resolution of the event in the solver's scale)
+Pi                        = 3.8e+07   (adjoint-free bound Pi_* = 9.92e+05)
+rtol * Pi                 = 3.8e+04
+Lambda_alpha (alpha=1)  = 5.55e+07;  rtol^alpha * Lambda = 5.55e+04
+Theta is largest at t = 0 (0.0% of T_e), 85% from component H
+--> PHASE ILL-CONDITIONED at this tolerance: one accepted step can move the event by its width
+    the admissible error exceeds the solution itself in: H, O  (the error test does not control their sign)
+    what would help:
+      - absolute tolerance <= 3e-12 gives Pi = 499 (relative control alone: 379); rtol must then be below 2.6e-06 as well
+      - time as a dependent variable with AbsTol_t = 2e-08

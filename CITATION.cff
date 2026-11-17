@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it and the paper."
+title: "phasecond: detection of phase ill-conditioning of autonomous initial value problems"
+type: software
+authors:
+  - family-names: Boros
+    given-names: Imre
+    affiliation: "Tiberiu Popoviciu Institute of Numerical Analysis, Romanian Academy, Cluj-Napoca, Romania"
+version: 0.1.0
+date-released: 2026-11-17
+license: MIT
+repository-code: "https://github.com/boros91/phasecond"
+keywords:
+  - ODE solvers
+  - event times
+  - error control
+  - phase error
+  - condition number
+  - adjoint
+preferred-citation:
+  type: article
+  authors:
+    - family-names: Boros
+      given-names: Imre
+      affiliation: "Tiberiu Popoviciu Institute of Numerical Analysis, Romanian Academy, Cluj-Napoca, Romania"
+  title: "Phase ill-conditioning of autonomous initial value problems: event times under local error control"
+  year: 2026
+  notes: "Preprint"

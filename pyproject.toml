@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "phasecond"
+version = "0.1.0"
+description = "Detection of phase ill-conditioning of autonomous initial value problems"
+authors = [{name = "Imre Boros"}]
+license = {text = "MIT"}
+requires-python = ">=3.9"
+dependencies = ["numpy", "scipy>=1.13"]
+readme = "README.md"
+keywords = ["ODE", "initial value problems", "event times", "error control", "condition number", "adjoint"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: Scientific/Engineering :: Mathematics",
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
+h2 = ["cantera"]
+
+[project.urls]
+Repository = "https://github.com/boros91/phasecond"
+
+[tool.setuptools]
+packages = ["phasecond"]
