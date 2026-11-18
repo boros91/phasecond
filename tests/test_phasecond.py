@@ -218,3 +218,58 @@ def test_sign_flag_sir():
     assert o.sign_unprotected == [1] and o.uncontrolled == [1]
     o = phase_report(P.sir, [1 - 1e-2, 1e-2], P.sir_event, 1000, R, A, jac=P.sir_jac, names=["S", "I"])
     assert o.sign_unprotected == []
+
+
+# ---------------------------------------------------------------- version 0.1.2: statuses of the late shift
+def test_narrow_positive_minimum_is_not_a_loss():
+    # f > 0 everywhere; the minimum is narrower than floating point resolves at x = 1.5
+    eps = 1e-32
+    o = scalar_report(lambda x: (x - 1.5) ** 2 + eps, 2.0, 2.001, rtol=0.01, atol=0.98,
+                      fprime=lambda x: 2 * (x - 1.5))
+    assert o.late_status == "unresolved" and np.isnan(o.x_lost)
+    assert "THE EVENT CAN BE LOST" not in str(o)
+    assert o.rtol * o.Theta_e * o.Pi_late <= np.pi / np.sqrt(eps)      # a lower estimate
+
+
+def test_unresolvable_minimum_is_not_ok():
+    eps = 1e-34
+    o = scalar_report(lambda x: (x - 1) ** 2 + eps, 1.00005, 1.000055, rtol=1e-4, atol=1e-6,
+                      fprime=lambda x: 2 * (x - 1))
+    assert o.late_status == "unresolved"
+    assert o.rtol * o.Theta_e * o.Pi_late <= np.pi / np.sqrt(eps)
+
+
+@pytest.mark.parametrize("c", [1e-12, 1e-20])
+def test_resolvable_minimum_away_from_zero(c):
+    f = lambda x: (x - 1) ** 2 + c
+    o = scalar_report(f, 1.00005, 1.000055, 1e-4, 1e-6)
+    xs = np.linspace(1.00005, 1.000055, 2001); y = xs - 1e-4 * (xs + 0.01); q = np.sqrt(c)
+    exact = ((np.arctan((xs - 1) / q) - np.arctan((y - 1) / q)) / q).max()
+    assert o.late_status == "ok"
+    assert 1e-4 * o.Theta_e * o.Pi_late == pytest.approx(exact, rel=1e-6)
+
+
+def test_undefined_rhs_is_not_a_loss():
+    with np.errstate(invalid="ignore"):
+        o = scalar_report(lambda x: 1 + np.sqrt(x), 0.001, 0.002, rtol=0.01, atol=0.01,
+                          fprime=lambda x: 0.5 / np.sqrt(x))
+    assert o.late_status == "undefined"
+    assert "THE EVENT CAN BE LOST" not in str(o) and "nan" not in str(o).split("-->")[1].split("\n")[0]
+
+
+def test_incomplete_classification_is_not_reassuring():
+    # every admissible backward defect leaves the domain of f: no verdict of good conditioning
+    with np.errstate(invalid="ignore"):
+        o = scalar_report(lambda x: 1 + np.sqrt(x), 0.001, 0.002, rtol=1e-4, atol=0.01,
+                          fprime=lambda x: 0.5 / np.sqrt(x))
+    assert o.late_status == "undefined"
+    text = str(o)
+    assert "well-conditioned" not in text and "grey zone" not in text
+    assert "classification incomplete" in text
+
+
+def test_genuine_loss_still_reported():
+    # logistic equation from below the absolute tolerance: a backward defect crosses x = 0
+    o = scalar_report(lambda x: x * (1 - x), 0.005, 0.5, rtol=0.01, atol=0.01)
+    assert o.late_status == "equilibrium" and not np.isfinite(o.Pi_late)
+    assert "THE EVENT CAN BE LOST" in str(o)

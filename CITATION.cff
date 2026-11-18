@@ -6,7 +6,7 @@ authors:
   - family-names: Boros
     given-names: Imre
     affiliation: "Tiberiu Popoviciu Institute of Numerical Analysis, Romanian Academy, Cluj-Napoca, Romania"
-version: 0.1.1
+version: 0.1.2
 doi: 10.5281/zenodo.24321464
 identifiers:
   - type: doi

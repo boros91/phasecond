@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "phasecond"
-version = "0.1.1"
+version = "0.1.2"
 description = "Detection of phase ill-conditioning of autonomous initial value problems"
 authors = [{name = "Imre Boros"}]
 license = {text = "MIT"}

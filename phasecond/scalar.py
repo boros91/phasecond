@@ -10,12 +10,18 @@ equilibrium (the event can then be lost).
 A defect in the direction of motion that would carry the solution past the event is clipped at
 the event: the event is then reached at once, and the advance is the remaining time T(x_e) - T(x).
 The suprema over the route are estimated on a grid with local refinement, not certified.
-A late shift is reported as infinite only when an equilibrium between the perturbed and the
-original state is demonstrated: a sign change of f on a sampling grid, f = 0 at a sampled point or
-at x = 0, an equilibrium given by the user (equilibria=...), or contributions of 1/f that keep
-growing on shells around an interior minimum of |f|.  Otherwise it is finite; if quadrature
-cannot resolve it, the value is kept and flagged as unresolved (a zero of even order away from
-x = 0 is found only if the user passes it in equilibria).
+A late shift is reported as infinite (status "equilibrium") only when an equilibrium between the
+perturbed and the original state is demonstrated: an equilibrium given by the user
+(equilibria=...), an evaluated value f = 0 (at a sampled point, at the minimum of |f| or at x = 0),
+or a sign change of f, which for a continuous f implies a zero.  When f is very small somewhere on
+the way back but none of these holds, the integral of 1/f is computed on shells around the minimum
+of |f|; it is accepted (status "ok") only if the shell contributions have converged and the part
+of the route that floating point cannot resolve contributes negligibly.  Otherwise the status is
+"unresolved": the delay is very large or infinite and this computation cannot tell which, and the
+value kept is the resolved part of the integral, a lower estimate.  A zero of even order that is
+not hit exactly is therefore reported as unresolved; pass it in equilibria to have it treated as
+an equilibrium.  If f is not finite on the way back (the route leaves the domain of f), the status
+is "undefined".
 """
 from dataclasses import dataclass
 import warnings
@@ -40,7 +46,7 @@ class ScalarReport:
     Pi_early: float      # finite-tolerance Pi, defect in the direction of motion (event early)
     Pi_late: float       # finite-tolerance Pi, defect against the motion (event late); inf: event can be lost
     x_lost: float        # first state from which an admissible defect reaches an equilibrium (nan if none)
-    late_status: str = "ok"   # "ok", "equilibrium" (demonstrated), "unresolved" (quadrature), "undefined" (f not finite)
+    late_status: str = "ok"   # "ok", "equilibrium" (demonstrated), "unresolved" (cannot tell), "undefined" (f not finite)
     x_unresolved: float = float("nan")   # a state at which the late shift was not resolved
 
     @property
@@ -54,22 +60,29 @@ class ScalarReport:
              f"rtol * Pi        = {self.rtolPi:.3g}",
              f"finite tolerance : rtol*Pi_early = {self.rtol*self.Pi_early:.3g},  rtol*Pi_late = {self.rtol*self.Pi_late:.3g}",
              f"Lambda_alpha (alpha={self.alpha:g}) = {self.Lambda:.3g};  rtol^alpha * Lambda = {self.rtol**self.alpha*self.Lambda:.3g}"]
-        if not np.isfinite(self.Pi_late):
+        big = self.rtol * np.nanmax([self.Pi_early, self.Pi_late]) >= 1   # Pi_late "unresolved": a lower estimate
+        if self.late_status == "equilibrium":
             L.append(f"--> THE EVENT CAN BE LOST: at x = {self.x_lost:.3g} an admissible error "
                      "reaches an equilibrium of f")
-        elif self.rtol * max(self.Pi_early, self.Pi_late) >= 1:
+        elif big:
             L.append("--> PHASE ILL-CONDITIONED at this tolerance: one admissible error can move the event "
                      "by its time resolution")
+        elif self.late_status in ("undefined", "unresolved"):
+            L.append(f"--> finite-tolerance classification incomplete: the backward shift is {self.late_status} "
+                     "(see the note); rtol * Pi above is the first-order value")
         elif self.rtolPi >= 1e-3:
             L.append("--> grey zone")
         else:
             L.append("--> phase well-conditioned at this tolerance")
         if self.late_status == "unresolved":
-            L.append(f"    NOTE: the late shift from x = {self.x_unresolved:.3g} was not resolved by quadrature "
-                     "(f is very small there, but no equilibrium was found); the value shown is an estimate")
+            L.append(f"    NOTE: the late shift from x = {self.x_unresolved:.3g} could not be resolved: f is very "
+                     "small on the way back, but no equilibrium was demonstrated.  The delay is very large or "
+                     "infinite and this computation cannot tell which; the value shown is the resolved part, "
+                     "a lower estimate.  If f has a zero there, pass it in equilibria")
         elif self.late_status == "undefined":
-            L.append(f"    NOTE: f is not finite on the way back from x = {self.x_unresolved:.3g}; "
-                     "the late shift there could not be computed")
+            L.append(f"    NOTE: f is not finite on the way back from x = {self.x_unresolved:.3g} (the admissible "
+                     "error leaves the domain of f); the late shift there is undefined, and rtol*Pi_late is "
+                     "taken over the states where it is defined")
         if self.Theta_e > self.T_e:
             L.append(f"    WARNING: Theta(T_e) = {self.Theta_e:.3g} exceeds T_e = {self.T_e:.3g}: the event level is "
                      "below the error scale, its time resolution is coarser than the time to reach it, and a small "
@@ -195,54 +208,83 @@ def _refine_max(fun, xs, vals):
 
 def _late_shift(f, inv, xa, xb, sgn, eq):
     """Exact delay int_{xb}^{xa} dz/f(z) caused by moving the state from xa back to xb.
-    Returns (value, status): status 'ok', 'equilibrium' (value inf), 'unresolved' or 'undefined'."""
+    Returns (value, status): 'ok'; 'equilibrium' (value inf, an equilibrium demonstrated);
+    'unresolved' (value = resolved part, a lower estimate); 'undefined' (value nan)."""
     lo, hi = min(xa, xb), max(xa, xb)
     if eq.size and np.any((eq >= lo) & (eq <= hi)):
         return np.inf, "equilibrium"
+    f1 = lambda z: f(np.array([z]))[0]
     zz = np.linspace(lo, hi, 257)
     with np.errstate(all="ignore"):
         fz = f(zz)
     if not np.all(np.isfinite(fz)):
         return np.nan, "undefined"
-    if np.any(fz * sgn <= 0):                      # a zero or a sign change: an equilibrium on the way
+    if np.any(fz * sgn <= 0):            # an evaluated zero, or a sign change of a continuous f
         return np.inf, "equilibrium"
-    if lo <= 0.0 <= hi and f(np.array([0.0]))[0] == 0:   # the common equilibrium x = 0, tested exactly
+    if lo <= 0.0 <= hi and f1(0.0) == 0:  # the common equilibrium x = 0, tested exactly
         return np.inf, "equilibrium"
     # interior minimum of |f|
     j = int(np.argmin(np.abs(fz)))
     a_, b_ = zz[max(j - 1, 0)], zz[min(j + 1, zz.size - 1)]
-    r = minimize_scalar(lambda z: abs(f(np.array([z]))[0]), bounds=(a_, b_), method="bounded",
-                        options=dict(xatol=1e-15 * max(abs(a_), abs(b_), hi - lo)))
-    zm = float(r.x)
-    fm = f(np.array([zm]))[0]
-    if fm * sgn <= 0:
+    zm, fm = _argmin_abs(f, a_, b_)
+    if not np.isfinite(fm):
+        return np.nan, "undefined"
+    if fm * sgn <= 0:                    # zero or sign change at the minimum
         return np.inf, "equilibrium"
     fend = min(abs(fz[0]), abs(fz[-1]))
-    if abs(fm) >= 1e-3 * fend:                      # no pronounced minimum: plain quadrature
+    if abs(fm) >= 1e-3 * fend:           # no pronounced minimum: plain quadrature
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             val, _, info, *msg = quad(inv, lo, hi, limit=500, epsabs=0, epsrel=1e-10, full_output=1)
         if not msg:
             return abs(val), "ok"
-    # a pronounced minimum of |f| at zm: does the integral of 1/f diverge there?  Integrate on shells
-    # zm +- [e_k, e_(k-1)], e_k = w 10^(-2k), each of two decades, and watch their contributions.
+    # A pronounced minimum of |f| at zm.  Integrate 1/f on shells zm +- [e_k, e_(k-1)], e_k = w 10^-k,
+    # down to e_last >= 64 ulp(zm), the resolution of floating point at zm.  The core |z - zm| < e_last
+    # is accepted only if f is nearly constant on it, so that its contribution is known; otherwise the
+    # feature of f at zm is below floating-point resolution and the status is "unresolved".  Growing
+    # shell contributions do not prove a zero, and are not used as evidence of one.
     w = hi - lo
-    edges = [w * 10.0 ** (-2 * kk) for kk in range(0, 16)]
-    total, shells = 0.0, []
+    res = 64 * np.spacing(abs(zm))
+    edges = [w * 10.0 ** (-kk) for kk in range(0, 40)]
+    edges = [e for e in edges if e >= res] or [w]
+    total = 0.0
     for e_out, e_in in zip(edges[:-1], edges[1:]):
-        c = 0.0
         for u, v in ((zm - e_out, zm - e_in), (zm + e_in, zm + e_out)):
             u, v = max(u, lo), min(v, hi)
             if v > u:
-                c += abs(_quad(inv, u, v))
-        shells.append(c); total += c
-    shells = np.array(shells)
-    nz = shells[shells > 0]
-    if nz.size >= 4 and np.all(nz[-3:] / np.maximum(nz[-4:-1], 1e-300) > 5):
-        return np.inf, "equilibrium"               # contributions grow like 1/e^(q-1), q >= 2
-    if shells[-1] <= 1e-8 * total:
-        return float(total), "ok"
+                total += abs(_quad(inv, u, v))
+    e = edges[-1]
+    u, v = max(zm - e, lo), min(zm + e, hi)
+    with np.errstate(all="ignore"):
+        fmax = max(abs(f1(u)), abs(f1(v)))
+    if not np.isfinite(fmax):
+        return float(total), "undefined"
+    core = (v - u) / abs(fm)                 # upper estimate of the core; lower one: (v - u)/fmax
+    if core * (1.0 - abs(fm) / fmax) <= 1e-8 * (total + core):
+        return float(total + core), "ok"
     return float(total), "unresolved"
+
+
+def _argmin_abs(f, a, b):
+    """Minimum of |f| on [a, b] by repeated sampling (33 points, shrinking to the neighbours of the
+    best point) down to floating-point resolution; returns (z, f(z)) with the smallest |f| seen."""
+    zbest, fbest = a, np.inf
+    with np.errstate(all="ignore"):
+        for _ in range(200):
+            z = np.linspace(a, b, 33)
+            fz = f(z)
+            if not np.all(np.isfinite(fz)):
+                return float(z[~np.isfinite(fz)][0]), np.nan
+            j = int(np.argmin(np.abs(fz)))
+            if abs(fz[j]) < abs(fbest):
+                zbest, fbest = float(z[j]), float(fz[j])
+            if fz[j] == 0:
+                break
+            a2, b2 = z[max(j - 1, 0)], z[min(j + 1, 32)]
+            if b2 - a2 <= 4 * np.spacing(max(abs(a2), abs(b2))) or (a2 == a and b2 == b):
+                break
+            a, b = a2, b2
+    return zbest, fbest
 
 
 def _integral(fun, x):

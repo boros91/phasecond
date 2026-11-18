@@ -20,7 +20,7 @@ Cantera 3.2.0 only for the hydrogen example.
 ## Installation
 
 ```
-pip install "git+https://github.com/boros91/phasecond@v0.1.1"
+pip install "git+https://github.com/boros91/phasecond@v0.1.2"
 ```
 
 or, from a clone of this repository, `pip install .` (add `[test]` for pytest). The examples and
@@ -34,7 +34,7 @@ tests are run from the clone: `python examples/demo.py`, `pytest -q`.
 | `Pi` | phase condition number, sup Theta / Theta(T_e). `rtol*Pi >= 1`: one accepted step can move the event by its own time resolution |
 | `Pi_star` | lower bound of Pi that needs no adjoint (speed of the solution in its error scale) |
 | `Lambda` | integrated indicator; `K * rtol**alpha * Lambda` models the accumulated shift |
-| `Pi_early`, `Pi_late` | scalar equations: exact shift by one admissible error, in both directions (an advance past the event is clipped at the event); `Pi_late = inf` means that an equilibrium lies between the perturbed and the original state, so the event can be lost. The suprema are estimated on a grid with local refinement |
+| `Pi_early`, `Pi_late` | scalar equations: exact shift by one admissible error, in both directions (an advance past the event is clipped at the event); `late_status` says how the delay was obtained: `"ok"`; `"equilibrium"` (`Pi_late = inf`: an equilibrium between the perturbed and the original state is demonstrated, by an evaluated zero, a sign change of f or a value passed in `equilibria`, so the event can be lost); `"unresolved"` (f is so small on the way back that this computation cannot tell a very long delay from a lost event; the value is the resolved part, a lower estimate); `"undefined"` (the admissible error leaves the domain of f). The suprema are estimated on a grid with local refinement |
 
 ## The four entry points
 
@@ -98,7 +98,7 @@ rtol * Pi                 = 43.8
 | `phasecond/posteriori.py` | `quick_check`, `orbit_test`, `shift_estimate` |
 | `examples/problems.py`, `examples/h2_problem.py` | test problems of the paper |
 | `examples/demo.py` | prints the reports for five problems |
-| `examples/validate.py` | validation runs for the paper -> `results/` (Tables SM13 and SM14 of version 18 of the paper; SM12 and SM13 in version 17) |
+| `examples/validate.py` | validation runs for the paper -> `results/` (Tables SM13 and SM14 of the paper) |
 | `tests/` | `pytest -q` (35 s); `pytest -q --runslow` adds Morris-Lecar and hydrogen-air |
 
 ## Validation (see `results/validation.txt`)
@@ -108,9 +108,11 @@ rtol * Pi                 = 43.8
   Jacobian), Morris-Lecar (2 cases) and hydrogen-air (3 tolerance ratios). Agreement: 2e-4 or
   better in Pi for the scalar cases (quadrature), 1e-4 or better in Pi and 1e-3 or better in Pi_*
   for the systems.
-- Edge cases of the finite-tolerance numbers (version 0.1.1): constant fields in both directions,
-  with the advance clipped at the event; loss of the event at a simple and at a double zero of f;
-  a large but finite delay near a positive minimum of f; tolerance advice for a problem in which a
+- Edge cases of the finite-tolerance numbers: constant fields in both directions, with the advance
+  clipped at the event; loss of the event at a simple and at a double zero of f; a large but finite
+  delay near a positive minimum of f, resolved (status ok, against the exact value) and below
+  floating-point resolution (status unresolved, never reported as a loss); a right-hand side that is
+  undefined on the way back; tolerance advice for a problem in which a
   larger absolute tolerance lowers Pi only by coarsening the event.
 - Cheap mode, 7 problems, runs with rtol 1e-4, atol 1e-6: from the 12 BDF and LSODA runs that
   reach the event, Pi_* agrees with the tight value to 0.05% and Pi lies between 0.49 and 1.01
@@ -136,11 +138,11 @@ rtol * Pi                 = 43.8
 
 The scripts and data that produce the figures and tables of the paper are in the repository
 [phase-ill-conditioning](https://github.com/boros91/phase-ill-conditioning), which uses this
-package at version 0.1.1.
+package at version 0.1.2.
 
 ## Citation
 
-If you use this package, please cite the paper and the package (see `CITATION.cff`). The package is archived on Zenodo: https://doi.org/10.5281/zenodo.24321464 (all versions; it resolves to the newest release). Version 0.1.0 (used in version 17 of the paper): https://doi.org/10.5281/zenodo.24321465. Version 0.1.1 is used in version 18 of the paper.
+If you use this package, please cite the paper and the package (see `CITATION.cff`). The package is archived on Zenodo: https://doi.org/10.5281/zenodo.24321464 (all versions; it resolves to the newest release). The paper uses version 0.1.2.
 
 ## License
 
