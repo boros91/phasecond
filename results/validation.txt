@@ -1,31 +1,31 @@
-flame, $q=2$, $\delta=10^{-4}$: tight  T_e=10007.21 Pi=2.4757e+05 Pi*=2.4757e+05 Lambda=2.5003e+05 nfev=20478 steps=2888 time=1.6s
+flame, $q=2$, $\delta=10^{-4}$: tight  T_e=10007.21 Pi=2.4757e+05 Pi*=2.4757e+05 Lambda=2.5003e+05 nfev=20478 steps=2888 time=1.5s
    BDF: shift=-131.5 Pi=2.343e+05 Pi*=2.4757e+05 Lambda=2.3638e+05 run nfev=227 steps=71 detector extra nfev=282 time=0.61s
-   LSODA: shift=-148.2 Pi=2.3036e+05 Pi*=2.4757e+05 Lambda=2.3227e+05 run nfev=210 steps=75 detector extra nfev=298 time=0.62s
+   LSODA: shift=-148.2 Pi=2.3036e+05 Pi*=2.4757e+05 Lambda=2.3227e+05 run nfev=210 steps=75 detector extra nfev=298 time=0.64s
    RK45: shift=-0.1089 Pi=2.7417e+05 Pi*=2.4757e+05 Lambda=2.7497e+05 run nfev=242 steps=25 detector extra nfev=98 time=0.35s
-flame, $q=3$, $\delta=10^{-2}$: tight  T_e=5100.5951 Pi=2475.8 Pi*=2475.7 Lambda=3099.8 nfev=13357 steps=1878 time=1.3s
-   BDF: shift=-9.372 Pi=2461.3 Pi*=2475.7 Lambda=3080.3 run nfev=199 steps=62 detector extra nfev=246 time=0.44s
-   LSODA: shift=-9.012 Pi=2463.1 Pi*=2475.7 Lambda=3082 run nfev=153 steps=54 detector extra nfev=214 time=0.45s
-   RK45: shift=+0.05536 Pi=2729.4 Pi*=2475.7 Lambda=3373.3 run nfev=206 steps=20 detector extra nfev=78 time=0.26s
-logistic, $x_0=10^{-5}$: tight  T_e=11.512915 Pi=490.69 Pi*=490.69 Lambda=495.33 nfev=13103 steps=1870 time=0.9s
-   BDF: shift=-0.184 Pi=407.91 Pi*=490.69 Lambda=413.76 run nfev=122 steps=41 detector extra nfev=162 time=0.26s
-   LSODA: shift=-0.08961 Pi=448.18 Pi*=490.69 Lambda=454.45 run nfev=78 steps=34 detector extra nfev=134 time=0.26s
-   RK45: shift=+0.007369 Pi=490.59 Pi*=490.69 Lambda=538.09 run nfev=92 steps=12 detector extra nfev=46 time=0.21s
-SIR, $I_0=10^{-6}$: tight  T_e=72.926998 Pi=4384.7 Pi*=4376.1 Lambda=4434.9 nfev=14935 steps=2130 time=1.2s
-   BDF: shift=-3.546 Pi=2158.1 Pi*=4375.9 Lambda=2222.2 run nfev=147 steps=44 detector extra nfev=348 time=0.41s
-   LSODA: shift=-1.522 Pi=3233.2 Pi*=4375.5 Lambda=3299.5 run nfev=96 steps=41 detector extra nfev=324 time=0.42s
-   RK45: shift=+0.666 Pi=4976.6 Pi*=4376.7 Lambda=5610 run nfev=98 steps=12 detector extra nfev=92 time=0.31s
-ghost, $\varepsilon=10^{-6}$: tight  T_e=3139.5927 Pi=9925.7 Pi*=9925.7 Lambda=22909 nfev=41507 steps=5896 time=2.7s
-   BDF: shift=-5.711 Pi=9786 Pi*=9925.7 Lambda=22573 run nfev=600 steps=197 detector extra nfev=786 time=1.49s
-   LSODA: shift=-0.8647 Pi=9998 Pi*=9925.7 Lambda=23025 run nfev=340 steps=145 detector extra nfev=578 time=1.15s
-   RK45: shift=+1.889 Pi=11098 Pi*=9925.7 Lambda=25492 run nfev=368 steps=45 detector extra nfev=178 time=0.70s
-Morris--Lecar, $\Delta=10^{-2}$: tight  T_e=1789.1009 Pi=63999 Pi*=30659 Lambda=1.2756e+05 nfev=66314 steps=9379 time=4.5s
-   BDF: shift=-6.495 Pi=61372 Pi*=30674 Lambda=1.2259e+05 run nfev=933 steps=352 detector extra nfev=1428 time=1.50s
-   LSODA: shift=-4.332 Pi=61804 Pi*=30669 Lambda=1.2113e+05 run nfev=833 steps=368 detector extra nfev=1580 time=1.60s
-   RK45: shift=-0.00357 Pi=68318 Pi*=50411 Lambda=1.2431e+06 run nfev=1076 steps=166 detector extra nfev=668 time=1.06s
-H$_2$--air: tight  T_e=0.00031113776 Pi=3.8031e+08 Pi*=9.9155e+06 Lambda=5.5523e+08 nfev=29880 steps=4240 time=9.0s
+flame, $q=3$, $\delta=10^{-2}$: tight  T_e=5100.5951 Pi=2475.8 Pi*=2475.7 Lambda=3099.8 nfev=13357 steps=1878 time=1.2s
+   BDF: shift=-9.372 Pi=2461.3 Pi*=2475.7 Lambda=3080.3 run nfev=199 steps=62 detector extra nfev=246 time=0.34s
+   LSODA: shift=-9.012 Pi=2463.1 Pi*=2475.7 Lambda=3082 run nfev=153 steps=54 detector extra nfev=214 time=0.33s
+   RK45: shift=+0.05536 Pi=2729.4 Pi*=2475.7 Lambda=3373.3 run nfev=206 steps=20 detector extra nfev=78 time=0.29s
+logistic, $x_0=10^{-5}$: tight  T_e=11.512915 Pi=490.69 Pi*=490.69 Lambda=495.33 nfev=13103 steps=1870 time=0.8s
+   BDF: shift=-0.184 Pi=407.91 Pi*=490.69 Lambda=413.76 run nfev=122 steps=41 detector extra nfev=162 time=0.25s
+   LSODA: shift=-0.08961 Pi=448.18 Pi*=490.69 Lambda=454.45 run nfev=78 steps=34 detector extra nfev=134 time=0.17s
+   RK45: shift=+0.007369 Pi=490.59 Pi*=490.69 Lambda=538.09 run nfev=92 steps=12 detector extra nfev=46 time=0.13s
+SIR, $I_0=10^{-6}$: tight  T_e=72.926998 Pi=4384.7 Pi*=4376.1 Lambda=4434.9 nfev=14935 steps=2130 time=0.9s
+   BDF: shift=-3.546 Pi=2158.1 Pi*=4375.9 Lambda=2222.2 run nfev=147 steps=44 detector extra nfev=348 time=0.36s
+   LSODA: shift=-1.522 Pi=3233.2 Pi*=4375.5 Lambda=3299.5 run nfev=96 steps=41 detector extra nfev=324 time=0.33s
+   RK45: shift=+0.666 Pi=4976.6 Pi*=4376.7 Lambda=5610 run nfev=98 steps=12 detector extra nfev=92 time=0.22s
+ghost, $\varepsilon=10^{-6}$: tight  T_e=3139.5927 Pi=9925.7 Pi*=9925.7 Lambda=22909 nfev=41507 steps=5896 time=2.4s
+   BDF: shift=-5.711 Pi=9786 Pi*=9925.7 Lambda=22573 run nfev=600 steps=197 detector extra nfev=786 time=1.25s
+   LSODA: shift=-0.8647 Pi=9998 Pi*=9925.7 Lambda=23025 run nfev=340 steps=145 detector extra nfev=578 time=1.21s
+   RK45: shift=+1.889 Pi=11098 Pi*=9925.7 Lambda=25492 run nfev=368 steps=45 detector extra nfev=178 time=0.66s
+Morris--Lecar, $\Delta=10^{-2}$: tight  T_e=1789.1009 Pi=63999 Pi*=30659 Lambda=1.2756e+05 nfev=66314 steps=9379 time=4.9s
+   BDF: shift=-6.495 Pi=61372 Pi*=30674 Lambda=1.2259e+05 run nfev=933 steps=352 detector extra nfev=1428 time=1.62s
+   LSODA: shift=-4.332 Pi=61804 Pi*=30669 Lambda=1.2113e+05 run nfev=833 steps=368 detector extra nfev=1580 time=1.63s
+   RK45: shift=-0.00357 Pi=68318 Pi*=50411 Lambda=1.2431e+06 run nfev=1076 steps=166 detector extra nfev=668 time=1.03s
+H$_2$--air: tight  T_e=0.00031113776 Pi=3.8031e+08 Pi*=9.9155e+06 Lambda=5.5523e+08 nfev=29880 steps=4240 time=8.0s
    BDF: no event (the reference solution did not reach the event before t_max)
    LSODA: no event (the reference solution did not reach the event before t_max)
-   RK45: shift=-2.396e-05 Pi=1.1951e+08 Pi*=9.983e+06 Lambda=1.221e+10 run nfev=3188 steps=460 detector extra nfev=20218 time=7.48s
+   RK45: shift=-2.396e-05 Pi=1.1951e+08 Pi*=9.983e+06 Lambda=1.221e+10 run nfev=3188 steps=460 detector extra nfev=20218 time=7.88s
 cheap/tight over 19 runs with event (2 without): Pi 0.31..1.14, Pi_* 1.000..1.644, Lambda 0.50..21.99
 implicit codes only (12 runs): Pi 0.49..1.01, Pi_* 0.9998..1.0005
 flame, $q=2$ x0=0.01 tol=0.0001: rPi=0.004951 early=0.00495 late=0.004952 T_e/Theta_e=25.15

@@ -117,7 +117,9 @@ def quick_check(f, sol, g, rtol, atol, scale="scipy", target=1e-3):
     accepted steps of `sol` (a solve_ivp result, or a pair (t, X)) up to the first step past the
     event g = 0.  Costs one evaluation of f per step.  Returns (Pi_star, message).
 
-    Pi_* <= Pi, so a large value proves ill-conditioning; a small value does not exclude it
+    On the exact orbit Pi_* <= Pi, so a large value flags possible ill-conditioning (computed from an
+    approximate orbit and sampling grid it is an estimate, not a certificate: near a decision threshold,
+    verify with phase_report and a tighter reference); a small value does not exclude it
     (errors transverse to the flow are not seen), and phase_report should then be used."""
     from .core import pi_star_from_run
     X = sol.y if hasattr(sol, "y") else np.asarray(sol[1], float)

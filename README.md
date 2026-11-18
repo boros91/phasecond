@@ -14,13 +14,13 @@ given solver error scale (relative and absolute tolerance), where the sensitivit
 which change of tolerances or unknowns removes it. The theory is in the paper *Phase
 ill-conditioning of autonomous initial value problems: event times under local error control* (I. Boros).
 
-Version 0.1.0. Python 3.9 or later with NumPy and SciPy (tested with Python 3.13 and SciPy 1.18.1);
+Version 0.1.1 (changes in `CHANGELOG.md`). Python 3.9 or later with NumPy and SciPy (tested with Python 3.13 and SciPy 1.18.1);
 Cantera 3.2.0 only for the hydrogen example.
 
 ## Installation
 
 ```
-pip install "git+https://github.com/boros91/phasecond@v0.1.0"
+pip install "git+https://github.com/boros91/phasecond@v0.1.1"
 ```
 
 or, from a clone of this repository, `pip install .` (add `[test]` for pytest). The examples and
@@ -34,7 +34,7 @@ tests are run from the clone: `python examples/demo.py`, `pytest -q`.
 | `Pi` | phase condition number, sup Theta / Theta(T_e). `rtol*Pi >= 1`: one accepted step can move the event by its own time resolution |
 | `Pi_star` | lower bound of Pi that needs no adjoint (speed of the solution in its error scale) |
 | `Lambda` | integrated indicator; `K * rtol**alpha * Lambda` models the accumulated shift |
-| `Pi_early`, `Pi_late` | scalar equations: exact shift by one admissible error, in both directions; `Pi_late = inf` means the event can be lost |
+| `Pi_early`, `Pi_late` | scalar equations: exact shift by one admissible error, in both directions (an advance past the event is clipped at the event); `Pi_late = inf` means that an equilibrium lies between the perturbed and the original state, so the event can be lost. The suprema are estimated on a grid with local refinement |
 
 ## The four entry points
 
@@ -43,7 +43,9 @@ from phasecond import phase_report, scalar_report, quick_check, orbit_test, shif
 ```
 
 1. **`quick_check(f, sol, g, rtol, atol)`**: after a run. `Pi_star` from the accepted steps of a
-   `solve_ivp` result; one evaluation of `f` per step. A large value proves the problem.
+   `solve_ivp` result; one evaluation of `f` per step. A large value flags possible ill-conditioning:
+   computed from an approximate orbit it is an estimate, so near a decision threshold verify it with
+   `phase_report` and a tight reference.
 2. **`phase_report(f, x0, g, t_max, rtol, atol)`**: the full a priori report: one reference
    integration to the event, one backward adjoint integration. Prints the verdict, the component
    and the time where the sensitivity sits, and what would help (absolute tolerance, logarithmic
@@ -77,9 +79,10 @@ Pi                        = 4.38e+05   (adjoint-free bound Pi_* = 4.38e+05)
 rtol * Pi                 = 43.8
 ...
 --> PHASE ILL-CONDITIONED at this tolerance: one accepted step can move the event by its width
-    the admissible error exceeds the solution itself in: I  (the error test does not control their sign)
+    absolute-tolerance regime (error scale > 2|x_i|) where Theta is largest, in: I
+    one admissible error can reach zero (rtol*s_i >= |x_i|) in: I  (the error test does not protect their sign)
     what would help:
-      - absolute tolerance <= 1e-11 gives Pi = 16.7 (relative control alone: 12.2); rtol must then be below 8.2e-05 as well
+      - absolute tolerance 1e-11 gives Pi = 16.7 (relative control alone: 12.2); rtol must then be below 8.2e-05 as well (tested on a half-decade grid, with the event's time resolution kept within 10%)
       - logarithmic unknowns: Pi = 7.6
       - time as a dependent variable with AbsTol_t = 0.0011
 ```
@@ -95,20 +98,25 @@ rtol * Pi                 = 43.8
 | `phasecond/posteriori.py` | `quick_check`, `orbit_test`, `shift_estimate` |
 | `examples/problems.py`, `examples/h2_problem.py` | test problems of the paper |
 | `examples/demo.py` | prints the reports for five problems |
-| `examples/validate.py` | validation runs for the paper -> `results/` (Tables SM12 and SM13 of the paper) |
-| `tests/` | `pytest -q` (30 s); `pytest -q --runslow` adds Morris-Lecar and hydrogen-air |
+| `examples/validate.py` | validation runs for the paper -> `results/` (Tables SM13 and SM14 of version 18 of the paper; SM12 and SM13 in version 17) |
+| `tests/` | `pytest -q` (35 s); `pytest -q --runslow` adds Morris-Lecar and hydrogen-air |
 
 ## Validation (see `results/validation.txt`)
 
 - The tests compare with the values saved for the paper: Pi, Pi_*, Pi for relative control,
   Theta(T_e) and T_e for 10 scalar cases, SIR (4 initial values, with and without a user
-  Jacobian), Morris-Lecar (2 cases) and hydrogen-air (3 tolerance ratios). Agreement: 1e-4 or
-  better in Pi.
+  Jacobian), Morris-Lecar (2 cases) and hydrogen-air (3 tolerance ratios). Agreement: 2e-4 or
+  better in Pi for the scalar cases (quadrature), 1e-4 or better in Pi and 1e-3 or better in Pi_*
+  for the systems.
+- Edge cases of the finite-tolerance numbers (version 0.1.1): constant fields in both directions,
+  with the advance clipped at the event; loss of the event at a simple and at a double zero of f;
+  a large but finite delay near a positive minimum of f; tolerance advice for a problem in which a
+  larger absolute tolerance lowers Pi only by coarsening the event.
 - Cheap mode, 7 problems, runs with rtol 1e-4, atol 1e-6: from the 12 BDF and LSODA runs that
   reach the event, Pi_* agrees with the tight value to 0.05% and Pi lies between 0.49 and 1.01
   times the tight value, although these runs misplace the event by up to 36 times its time
-  resolution. From RK45 runs (few steps, coarse dense output) Pi is within 0.31..1.14 and Lambda
-  is unreliable. Two implicit runs (hydrogen) do not reach the event at all; the function then
+  resolution. From RK45 runs (few steps, coarse dense output) Pi is within 0.31..1.14 and Pi_*
+  within 1.00..1.64 of the tight values, and Lambda is unreliable. Two implicit runs (hydrogen) do not reach the event at all; the function then
   raises an error and the tight mode must be used.
 - `shift_estimate` reproduces the measured event-time error of SIR runs to 2% or better at
   tolerance 1e-6.
@@ -128,11 +136,11 @@ rtol * Pi                 = 43.8
 
 The scripts and data that produce the figures and tables of the paper are in the repository
 [phase-ill-conditioning](https://github.com/boros91/phase-ill-conditioning), which uses this
-package at version 0.1.0.
+package at version 0.1.1.
 
 ## Citation
 
-If you use this package, please cite the paper and the package (see `CITATION.cff`). The package is archived on Zenodo: https://doi.org/10.5281/zenodo.24321464 (all versions); version 0.1.0: https://doi.org/10.5281/zenodo.24321465.
+If you use this package, please cite the paper and the package (see `CITATION.cff`). The package is archived on Zenodo: https://doi.org/10.5281/zenodo.24321464 (all versions; it resolves to the newest release). Version 0.1.0 (used in version 17 of the paper): https://doi.org/10.5281/zenodo.24321465. Version 0.1.1 is used in version 18 of the paper.
 
 ## License
 

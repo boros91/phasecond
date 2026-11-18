@@ -9,9 +9,10 @@ For the error scale s(x) of a solver (relative and absolute tolerance) the modul
     Pi_star   = sup_t (1/mu(t)) / Theta(T_e)        adjoint-free lower bound, mu = max_i |f_i|/s_i
     Lambda    = (1/Theta(T_e)) int (Theta*omega)^alpha dt     integrated indicator
 
-and derived quantities: Pi for relative control only, Pi in logarithmic unknowns, the largest
-uniform absolute tolerance for which rtol*Pi stays below a target, and the components in which
-the admissible error exceeds the solution itself.
+and derived quantities: Pi for relative control only, Pi in logarithmic unknowns, a uniform
+absolute tolerance that passes the target rtol*Pi on a half-decade grid together with every
+smaller tested value, and the components in the absolute-tolerance regime or whose sign one
+admissible error does not protect.
 """
 from dataclasses import dataclass, field
 import warnings
@@ -74,10 +75,10 @@ class PhaseReport:
     t_max: float
     x_max: np.ndarray
     share_max: np.ndarray           # share of each component in Theta at its maximum
-    uncontrolled: list              # components with s_i > |x_i| carrying >= 10% of Theta there
+    uncontrolled: list              # absolute-tolerance regime at the maximum of Theta: s_i > 2|x_i|, share >= 10%
     adjoint_check: float
-    atol_safe: float
-    atol_floor: float               # largest uniform atol with Pi <= 2*Pi_rel
+    atol_safe: float                # largest tested uniform atol with rtol*Pi <= target there and at every smaller tested atol
+    atol_floor: float               # the same with Pi <= 2*Pi_rel
     target: float
     ref_rtolPi: float               # rtol*Pi of the reference run itself
     n_ref_steps: int
@@ -87,6 +88,9 @@ class PhaseReport:
     Theta: np.ndarray = field(repr=False)
     X: np.ndarray = field(repr=False)
     Lam: np.ndarray = field(repr=False)
+    sign_unprotected: list = field(default_factory=list)   # rtol*s_i >= |x_i| while carrying >= 10% of Theta
+    atol_safe_rtolPi: float = float("nan")                # rtol*Pi at atol_safe
+    atol_safe_shift: float = float("nan")                 # rtol*max_t Theta at atol_safe: largest one-defect shift, time units
     ref: object = field(repr=False, default=None)
     adj: object = field(repr=False, default=None)
 
@@ -134,17 +138,27 @@ class PhaseReport:
              f"{self.share_max[dom]:.0%} from component {nm[dom]}",
              f"--> {self.verdict}"]
         if self.uncontrolled:
-            L.append("    the admissible error exceeds the solution itself in: "
-                     + ", ".join(nm[i] for i in self.uncontrolled)
-                     + "  (the error test does not control their sign)")
+            L.append("    absolute-tolerance regime (error scale > 2|x_i|) where Theta is largest, in: "
+                     + ", ".join(nm[i] for i in self.uncontrolled))
+        if self.sign_unprotected:
+            L.append("    one admissible error can reach zero (rtol*s_i >= |x_i|) in: "
+                     + ", ".join(nm[i] for i in self.sign_unprotected)
+                     + "  (the error test does not protect their sign)")
+        if self.Theta_e > self.T_e:
+            L.append(f"    WARNING: Theta(T_e) = {self.Theta_e:.3g} exceeds T_e = {self.T_e:.3g}: the event level is below "
+                     "the error scale, its time resolution is coarser than the time to reach it, and a small Pi "
+                     "does not mean an accurate event time")
         if self.level > 0:
             L.append("    what would help:")
             if np.isfinite(self.atol_safe):
-                L.append(f"      - absolute tolerance <= {self.atol_safe:.0e} (then rtol*Pi <= {self.target:g})")
-            else:
-                L.append(f"      - absolute tolerance <= {self.atol_floor:.0e} gives Pi = {self.pi_for(atol=self.atol_floor):.3g}"
+                L.append(f"      - absolute tolerance {self.atol_safe:.0e}: rtol*Pi = {self.atol_safe_rtolPi:.2g}, largest "
+                         f"one-defect shift rtol*max Theta = {self.atol_safe_shift:.2g} time units (tested on a "
+                         f"half-decade grid; every smaller tested value also gives rtol*Pi <= {self.target:g})")
+            elif np.isfinite(self.atol_floor):
+                L.append(f"      - absolute tolerance {self.atol_floor:.0e} gives Pi = {self.pi_for(atol=self.atol_floor):.3g}"
                          f" (relative control alone: {self.Pi_rel:.3g}); rtol must then be below "
-                         f"{self.target / self.Pi_rel:.1e} as well")
+                         f"{self.target / self.Pi_rel:.1e} as well (tested on a half-decade grid, with the event's "
+                         "time resolution kept within 10%)")
             if np.isfinite(self.Pi_log):
                 L.append(f"      - logarithmic unknowns: Pi = {self.Pi_log:.3g}")
             L.append(f"      - time as a dependent variable with AbsTol_t = {self.time_tolerance():.2g}")
@@ -250,6 +264,8 @@ def phase_report(f, x0, g, t_max, rtol=1e-4, atol=1e-6, scale="scipy", alpha=1.0
     k = int(np.argmax(Theta))
     share = contrib[:, k] / Theta[k]
     unc = [i for i in range(n) if S[i, k] > 2 * abs(X[i, k]) and share[i] >= 0.1]
+    shares = contrib / np.maximum(Theta, TINY)
+    sgn_unp = [i for i in range(n) if np.any((rtol * S[i] >= np.abs(X[i])) & (shares[i] >= 0.1))]
     mu = (np.abs(Fx) / S).max(axis=0)
     Pi_star = float((1.0 / np.maximum(mu, TINY)).max() / Theta_e)
 
@@ -269,16 +285,27 @@ def phase_report(f, x0, g, t_max, rtol=1e-4, atol=1e-6, scale="scipy", alpha=1.0
         th = (S_ * np.abs(Lam)).sum(axis=0)
         return float(th.max() / th[-1])
     Pi_rel = pi_of(np.abs(X) + TINY)
-    atol_safe = np.nan
-    for a in 10.0 ** np.arange(0, -40.5, -0.5):
-        if rtol * pi_of(error_scale(X, rtol, a, scale)) <= target:
-            atol_safe = a
-            break
-    atol_floor = np.nan
-    for a in 10.0 ** np.arange(0, -40.5, -0.5):
-        if pi_of(error_scale(X, rtol, a, scale)) <= 2 * Pi_rel:
-            atol_floor = a
-            break
+    # tolerance advice on a half-decade grid, scanned upwards from the smallest value: a value is
+    # recommended only if it and every smaller tested value pass.  Theta(T_e) itself grows with atol,
+    # which lowers the normalized Pi without reducing any time shift; the advice therefore also keeps
+    # the event's time resolution within 10% of its value for the smallest tested atol.
+    grid = 10.0 ** np.arange(-40, 0.25, 0.5)
+    ths = [(error_scale(X, rtol, a, scale) * np.abs(Lam)).sum(axis=0) for a in grid]
+    pis = np.array([th.max() / th[-1] for th in ths])
+    the = np.array([th[-1] for th in ths])
+    fixed_width = the <= 1.1 * the[0]
+    def largest_passing(ok):
+        ok = ok & fixed_width
+        if not ok[0]:
+            return np.nan
+        bad = np.where(~ok)[0]
+        return float(grid[bad[0] - 1] if bad.size else grid[-1])
+    atol_safe = largest_passing(rtol * pis <= target)
+    atol_floor = largest_passing(pis <= 2 * Pi_rel)
+    safe_rtolPi = safe_shift = np.nan
+    if np.isfinite(atol_safe):
+        th = (error_scale(X, rtol, atol_safe, scale) * np.abs(Lam)).sum(axis=0)
+        safe_rtolPi, safe_shift = float(rtol * th.max() / th[-1]), float(rtol * th.max())
     Pi_log = np.nan
     if np.all(X > 0):          # unknowns u = ln x: du = dx/x, absolute control of u
         ar = np.max(np.asarray(atol, float)) / rtol
@@ -295,7 +322,7 @@ def phase_report(f, x0, g, t_max, rtol=1e-4, atol=1e-6, scale="scipy", alpha=1.0
                        t_max=float(t[k]), x_max=X[:, k].copy(), share_max=share, uncontrolled=unc,
                        adjoint_check=check, atol_safe=float(atol_safe), atol_floor=float(atol_floor), target=target,
                        ref_rtolPi=float(ref_rtol * ref_pi), n_ref_steps=int(ref.t.size), cost=cost, names=names,
-                       t=t, Theta=Theta, X=X, Lam=Lam, ref=ref, adj=adj)
+                       sign_unprotected=sgn_unp, atol_safe_rtolPi=safe_rtolPi, atol_safe_shift=safe_shift, t=t, Theta=Theta, X=X, Lam=Lam, ref=ref, adj=adj)
 
 
 def pi_star_from_run(f, X, g, rtol, atol, scale="scipy"):

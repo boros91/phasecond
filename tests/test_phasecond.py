@@ -160,3 +160,61 @@ def test_hydrogen():
         assert r.pi_for(rtol=1.0, atol=ratio) == pytest.approx(Pi, rel=1e-4)
     assert r.Pi_rel == pytest.approx(379.1267838461042, rel=1e-4)
     assert r.names[int(np.argmax(r.share_max))] == "H"
+
+
+# ---------------------------------------------------------------- version 0.1.1: finite-tolerance edge cases
+ONE = lambda x: np.ones_like(x)
+ZERO = lambda x: np.zeros_like(x)
+
+
+def test_constant_field_forward_clipping():
+    # x' = 1, s = x, rtol = 0.01: advance min(r x, x_e - x), largest at x = x_e/(1 + r); delay r x_e
+    r = 0.01
+    for xe, early in ((2.0, 2 * r / (1 + r)), (1.001, 1e-3), (1.000001, 1e-6)):
+        o = scalar_report(ONE, 1.0, xe, rtol=r, atol=0.0, fprime=ZERO)
+        assert r * o.Theta_e * o.Pi_early == pytest.approx(early, rel=1e-6)
+        assert r * o.Theta_e * o.Pi_late == pytest.approx(r * xe, rel=1e-6)
+        assert o.late_status == "ok" and np.isnan(o.x_lost)
+
+
+def test_constant_field_decreasing():
+    # x' = -1 from 2 to 1.995: the advance is clipped at the event (x - 1.995 <= 0.005 < r x)
+    r = 0.01
+    o = scalar_report(lambda x: -np.ones_like(x), 2.0, 1.995, rtol=r, atol=0.0, fprime=ZERO)
+    assert r * o.Theta_e * o.Pi_early == pytest.approx(0.005, rel=1e-6)
+    assert r * o.Theta_e * o.Pi_late == pytest.approx(0.02, rel=1e-6)
+
+
+def test_loss_at_even_order_zero():
+    # y' = y^2 (1 - y) from below atol: a late defect crosses y = 0, where f has a double zero
+    o = scalar_report(P.flame(2), 1e-7, 0.5, R, A)
+    assert not np.isfinite(o.Pi_late) and o.late_status == "equilibrium"
+    # a known equilibrium passed by the user
+    o = scalar_report(lambda x: (x - 0.3) ** 2 * (1.5 - x) + 0.0, 0.3 + 1e-7, 0.5, R, A, equilibria=[0.3])
+    assert not np.isfinite(o.Pi_late)
+
+
+def test_finite_near_equilibrium():
+    # f = c + x^2 > 0 everywhere: the late shift through x = 0 is large but finite
+    for c in (1e-12, 1e-30):
+        f = lambda x, c=c: c + x * x
+        o = scalar_report(f, 1e-3, 2e-3, 1e-2, 2e-3)
+        xs = np.linspace(1e-3, 2e-3, 20001); y = xs - 1e-2 * (xs + 0.2); q = np.sqrt(c)
+        exact = ((np.arctan(xs / q) - np.arctan(y / q)) / q).max()
+        assert np.isfinite(o.Pi_late) and o.late_status == "ok"
+        assert 1e-2 * o.Theta_e * o.Pi_late == pytest.approx(exact, rel=1e-6)
+
+
+def test_tolerance_advice_does_not_reward_a_coarser_event():
+    # x' = -1 from 100 to 1, s = x + a/r: Pi(a) = (100 + a/r)/(1 + a/r) falls only because Theta(T_e) grows
+    o = phase_report(lambda x: np.array([-1.0]), [100.0], lambda x: x[0] - 1.0, 101, 1e-4, 1e-8,
+                     jac=lambda x: np.zeros((1, 1)), direction=-1)
+    assert np.isnan(o.atol_safe)
+    assert o.atol_floor <= 1e-4
+
+
+def test_sign_flag_sir():
+    o = phase_report(P.sir, [1 - 1e-8, 1e-8], P.sir_event, 1000, R, A, jac=P.sir_jac, names=["S", "I"])
+    assert o.sign_unprotected == [1] and o.uncontrolled == [1]
+    o = phase_report(P.sir, [1 - 1e-2, 1e-2], P.sir_event, 1000, R, A, jac=P.sir_jac, names=["S", "I"])
+    assert o.sign_unprotected == []
