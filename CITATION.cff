@@ -7,6 +7,14 @@ authors:
     given-names: Imre
     affiliation: "Tiberiu Popoviciu Institute of Numerical Analysis, Romanian Academy, Cluj-Napoca, Romania"
 version: 0.1.0
+doi: 10.5281/zenodo.24321464
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.24321464
+    description: "Zenodo concept DOI (all versions)"
+  - type: doi
+    value: 10.5281/zenodo.24321465
+    description: "Zenodo archive of release v0.1.0"
 date-released: 2026-11-17
 license: MIT
 repository-code: "https://github.com/boros91/phasecond"

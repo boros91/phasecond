@@ -1,5 +1,7 @@
 # phasecond
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24321464.svg)](https://doi.org/10.5281/zenodo.24321464)
+
 Detection of *phase ill-conditioning* of autonomous initial value problems
 
     x' = f(x),   x(0) = x0,   event g(x) = 0.
@@ -130,7 +132,7 @@ package at version 0.1.0.
 
 ## Citation
 
-If you use this package, please cite the paper and the package (see `CITATION.cff`).
+If you use this package, please cite the paper and the package (see `CITATION.cff`). The package is archived on Zenodo: https://doi.org/10.5281/zenodo.24321464 (all versions); version 0.1.0: https://doi.org/10.5281/zenodo.24321465.
 
 ## License
 
